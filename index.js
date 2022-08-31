@@ -1,14 +1,12 @@
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { withCors } from "https://deno.land/x/cors_protocol@1.0.0-beta.2/mod.ts";
-import { OpenAI } from "https://deno.land/x/openai/mod.ts";
 
 // ##################################################################### //
 // ############################### Server ############################## //
 // ##################################################################### //
 
 const GPT_TOKEN = initEnvVariable("GPT_TOKEN"),
-	PORT = ":8080",
-	gpt3 = new OpenAI(GPT_TOKEN);
+	PORT = ":8080";
 
 async function handleRequest(request) {
 	const { pathname } = new URL(request.url);
@@ -66,14 +64,14 @@ const handleGenerateGpt3Title = async (request) => {
 const generateGpt3Title = async (json) => {
 	let noteContents = "";
 
-	json.blockContents.forEach((blockContent) => {
-		console.log(blockContent);
+	json.blockContents.forEach((blockContent, index) => {
+		noteContents += "Day " + (index + 1) + ":\n\n";
 		noteContents += blockContent.title + "\n";
 		noteContents += blockContent.inputValue + "\n\n";
 	});
 
-	const prompt = `These are the contents of your last 3 daily notes:\n"""\n${noteContents}"""\nComplete the following:\nRecently you were thinking about ..., what do you think about...?`,
-		response = await gpt3.createCompletion(prompt, "text-davinci-002", 0.7),
+	const prompt = `These are the contents of my last 3 daily notes:\n"""\n${noteContents}"""\n"""\nComplete the following sentence by replacing the areas marked with <>:\nRecently you wrote about <something i wrote down>, what do you think about <suggestion on how to improve this> to save energy?`,
+		response = await createCompletion(prompt),
 		title = response.choices[0].text;
 
 	// remove newlines and trailing whitspace
@@ -86,4 +84,40 @@ function initEnvVariable(name) {
 		console.error(`Environment variable ${name} not set!!!`);
 	}
 	return Deno.env.get(name) || "";
+}
+
+// Fetch request
+
+async function createCompletion(
+	prompt = "",
+	engine = "text-davinci-002",
+	temperature = 1,
+	maxTokens = 35,
+	topP = 1,
+	frequencyPenalty = 0,
+	presencePenalty = 0,
+	bestOf = 3,
+	stop = [".", "!"]
+) {
+	const response = await fetch(
+		`https://api.openai.com/v1/engines/${engine}/completions`,
+		{
+			body: JSON.stringify({
+				prompt: prompt,
+				temperature: temperature,
+				max_tokens: maxTokens,
+				top_p: topP,
+				frequency_penalty: frequencyPenalty,
+				presence_penalty: presencePenalty,
+				stop: stop,
+				best_of: bestOf,
+			}),
+			headers: {
+				Authorization: `Bearer ${GPT_TOKEN}`,
+				"Content-Type": "application/json",
+			},
+			method: "POST",
+		}
+	);
+	return response.json();
 }
