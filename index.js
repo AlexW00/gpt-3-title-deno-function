@@ -75,7 +75,7 @@ const generateGpt3Title = async (json) => {
 		title = response.choices[0].text;
 
 	// remove newlines and trailing whitspace
-	return title.replace(/\n/g, "").trim();
+	return title.replace(/\n/g, "").trim() + "?";
 };
 
 // Helper
@@ -92,12 +92,12 @@ async function createCompletion(
 	prompt = "",
 	engine = "text-davinci-002",
 	temperature = 1,
-	maxTokens = 35,
+	maxTokens = 50,
 	topP = 1,
 	frequencyPenalty = 0,
 	presencePenalty = 0,
 	bestOf = 3,
-	stop = [".", "!"]
+	stop = [".", "!", "?"]
 ) {
 	const response = await fetch(
 		`https://api.openai.com/v1/engines/${engine}/completions`,
