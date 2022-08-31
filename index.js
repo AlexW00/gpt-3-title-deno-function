@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
+import { withCors } from "https://deno.land/x/cors_protocol@1.0.0-beta.2/mod.ts";
 import { OpenAI } from "https://deno.land/x/openai/mod.ts";
 
 // ##################################################################### //
@@ -17,10 +18,12 @@ async function handleRequest(request) {
 	switch (request.method) {
 		case "POST":
 			return await handleGetRequest(request, pathname);
+		case "GET":
+			return new Response("test back");
 	}
 }
 
-serve((_req) => handleRequest(_req), { addr: PORT });
+serve(withCors(handleRequest), { addr: PORT });
 //serve(handleRequest, { addr: PORT });
 console.log(`Listening on port ${PORT}`);
 
@@ -34,6 +37,8 @@ const handleGetRequest = async (request, pathname) => {
 	switch (pathname) {
 		case "/":
 			return await handleGenerateGpt3Title(request);
+		default:
+			return new Response(JSON.stringify({ title: "hi" }));
 	}
 };
 
